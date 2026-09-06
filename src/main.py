@@ -1,5 +1,8 @@
 import tkinter as tk
 import os
+import api
+
+api.getData()
 
 """
 if os.environ.get('DISPLAY', '') == '':
