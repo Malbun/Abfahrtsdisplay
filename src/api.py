@@ -124,10 +124,15 @@ def loadConfig() -> dict:
   """
 
   configFilePath = os.path.dirname(os.getcwd()) + "\\Abfahrtsdisplay\\config.yml"
-  with open(configFilePath, "r")as ymlFile:
+  with open(configFilePath, "r") as ymlFile:
     configData = yaml.load(ymlFile.read(), yaml.FullLoader)["config"]
 
   return configData
+
+def saveConfig(config) -> None:
+  configFilePath = os.path.dirname(os.getcwd()) + "\\Abfahrtsdisplay\\config.yml"
+  with open(configFilePath, "r") as ymlFile:
+    yaml.dump(config, ymlFile)
 
 def getBody(sloid, stationName):
   now = datetime.now(timezone.utc)
