@@ -1,15 +1,19 @@
 from collections import defaultdict
-
 import requests
 import yaml
 import os
 import json
 from datetime import datetime, timezone
 import xmltodict
+import pickle
+from pathlib import Path
 
 
 def getData():
   configData = loadConfig()
+
+  # checks the api request limit and add one request
+  checkApiLimit()
 
   apiKey = configData["key"]
   stationName = configData["station"]
@@ -97,6 +101,46 @@ def getData():
   return results
 
 
+def checkApiLimit():
+  r"""
+  Checks the api request limit. If exceeded then raise an ApiError.
+  Adds the current time to the requests list
+  :raises ApiError
+  :return:
+  """
+  listOfRequests = []
+
+  # Get the list of requests from filesystem or work with the empty list
+  rqTimesPath = Path(os.path.dirname(os.getcwd()) + "\\Abfahrtsdisplay\\rqTimes.TIMES")
+  if rqTimesPath.exists():
+    with open(rqTimesPath, "rb") as rqTimesFile:
+      listOfRequests = pickle.load(rqTimesFile)
+
+  # get the amount of requests since midnight
+  midnight = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+  rqToday = getRqSince(listOfRequests, midnight)
+
+  # check if the limit is exceeded
+  if rqToday >= 20000:
+    raise ApiError("Exceeded today's limit", 3)
+
+  # get the amount of requests this minute
+  thisMinute = datetime.now().replace(second=0, microsecond=0)
+  rqThisMinute = getRqSince(listOfRequests, thisMinute)
+
+  # check if the limit is exceeded
+  if rqThisMinute >= 50:
+    raise ApiError("Exceeded this minute's limit", 4)
+
+  # add the current datetime to the list
+  listOfRequests.append(int(datetime.now().timestamp()))
+
+  # save the list to the filesystem
+  with open(rqTimesPath, "wb") as rqTimesFile:
+    pickle.dump(listOfRequests, rqTimesFile)
+
+
+
 def stationNameToSLOID(stationName):
   r"""
   Gets the didok number by station name
@@ -172,6 +216,21 @@ def getBody(sloid, stationName):
     </OJP>
     """
   return body
+
+def getRqSince(listOfTimestamps: list, threshold: datetime) -> int:
+  listOfTimestamps.sort(reverse=True)
+
+  posixThreshold = int(threshold.timestamp())
+
+  indexOfLastIrrelevant = len(listOfTimestamps)
+
+  for index, timestamp in enumerate(listOfTimestamps):
+    if timestamp < posixThreshold:
+      indexOfLastIrrelevant = index
+      break
+
+  listOfRequestsToday = listOfTimestamps[:indexOfLastIrrelevant]
+  return len(listOfRequestsToday)
 
 class ApiError(Exception):
   r"""
