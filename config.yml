@@ -1,6 +1,6 @@
 config:
   key: API_KEY
   station: "Buchs SG"
-  requetsCounter:
+  requestCounter:
     count: 0
     timestamp: "TIMESTAMP"
