@@ -1,4 +1,6 @@
 from collections import defaultdict
+from typing import Any
+
 import requests
 import yaml
 import os
@@ -10,12 +12,11 @@ from pathlib import Path
 
 
 def getData():
-  configData = loadConfig()
+  configData, apiKey = loadConfig()
 
   # checks the api request limit and add one request
   checkApiLimit()
 
-  apiKey = configData["key"]
   stationName = configData["station"]
 
   sloid = stationNameToSLOID(stationName)
@@ -111,7 +112,7 @@ def checkApiLimit():
   listOfRequests = []
 
   # Get the list of requests from filesystem or work with the empty list
-  rqTimesPath = Path(os.path.dirname(os.getcwd()) + "\\Abfahrtsdisplay\\rqTimes.TIMES")
+  rqTimesPath = Path(os.path.dirname(os.getcwd()) + "/Abfahrtsdisplay/rqTimes.TIMES")
   if rqTimesPath.exists():
     with open(rqTimesPath, "rb") as rqTimesFile:
       listOfRequests = pickle.load(rqTimesFile)
@@ -161,20 +162,22 @@ def stationNameToSLOID(stationName):
     return sloid
 
 
-def loadConfig() -> dict:
+def loadConfig() -> tuple[Any, str]:
   r"""
   Loads the configuration from the disk
   :return: A dict with the loaded configuration
   """
 
-  configFilePath = os.path.dirname(os.getcwd()) + "\\Abfahrtsdisplay\\config.yml"
+  configFilePath = os.path.dirname(os.getcwd()) + "/Abfahrtsdisplay/config.yml"
   with open(configFilePath, "r") as ymlFile:
     configData = yaml.load(ymlFile.read(), yaml.FullLoader)["config"]
+    with open(configData["keyfile"], "r") as keyfile:
+      apiKey = keyfile.read()
 
-  return configData
+  return configData, apiKey
 
 def saveConfig(config) -> None:
-  configFilePath = os.path.dirname(os.getcwd()) + "\\Abfahrtsdisplay\\config.yml"
+  configFilePath = os.path.dirname(os.getcwd()) + "/Abfahrtsdisplay/config.yml"
   with open(configFilePath, "r") as ymlFile:
     yaml.dump(config, ymlFile)
 
