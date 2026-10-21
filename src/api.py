@@ -171,7 +171,7 @@ def loadConfig() -> tuple[Any, str]:
   with open(configFilePath, "r") as ymlFile:
     configData = yaml.load(ymlFile.read(), yaml.FullLoader)["config"]
     with open(configData["keyfile"], "r") as keyfile:
-      apiKey = keyfile.read()
+      apiKey = keyfile.read().strip()
 
   return configData, apiKey
 
