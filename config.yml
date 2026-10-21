@@ -1,3 +1,3 @@
 config:
   keyfile: apiKey.txt
-  station: "Bern"
+  station: "Lausanne"
