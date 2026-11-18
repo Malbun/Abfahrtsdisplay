@@ -1,6 +1,5 @@
 from collections import defaultdict
 from typing import Any
-
 import requests
 import yaml
 import os
@@ -9,24 +8,27 @@ from datetime import datetime, timezone
 import xmltodict
 import pickle
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 
 def getData():
+  tz = ZoneInfo("Europe/Zurich")
+
   configData, apiKey = loadConfig()
 
   # checks the api request limit and add one request
   checkApiLimit()
 
-  stationName = configData["station"]
+  station = configData["station"]
 
-  sloid = stationNameToSLOID(stationName)
+  sloid = stationNameToSLOID(station)
 
   ojpUrl = "https://api.opentransportdata.swiss/ojp20"
   headers = {
     "Content-Type": "application/xml",
     "Authorization": f"Bearer {apiKey}"
   }
-  body = getBody(sloid, stationName)
+  body = getBody(sloid, station)
 
   response = requests.post(
     url=ojpUrl,
@@ -40,7 +42,6 @@ def getData():
 
   responseDict = xmltodict.parse(response.content)
   stopEventResult = responseDict["OJP"]["OJPResponse"]["siri:ServiceDelivery"]["OJPStopEventDelivery"]["StopEventResult"]
-  print(json.dumps(stopEventResult))
 
   results = []
 
@@ -71,11 +72,11 @@ def getData():
       currentResult["thisCall"]["otherQuay"] = False
 
     # get the timetabled time
-    currentResult["thisCall"]["timetabledTime"] = datetime.fromisoformat(stopEvent["StopEvent"]["ThisCall"]["CallAtStop"]["ServiceDeparture"]["TimetabledTime"])
+    currentResult["thisCall"]["timetabledTime"] = datetime.fromisoformat(stopEvent["StopEvent"]["ThisCall"]["CallAtStop"]["ServiceDeparture"]["TimetabledTime"]).astimezone(tz)
 
     # check if an estimated time is present in data. Process the estimated time and set the delayed flag
     if "EstimatedTime" in stopEvent["StopEvent"]["ThisCall"]["CallAtStop"]["ServiceDeparture"]:
-      currentResult["thisCall"]["estimatedTime"] = datetime.fromisoformat(stopEvent["StopEvent"]["ThisCall"]["CallAtStop"]["ServiceDeparture"]["EstimatedTime"])
+      currentResult["thisCall"]["estimatedTime"] = datetime.fromisoformat(stopEvent["StopEvent"]["ThisCall"]["CallAtStop"]["ServiceDeparture"]["EstimatedTime"]).astimezone(tz)
       currentResult["thisCall"]["delayed"] = (currentResult["thisCall"]["estimatedTime"] - currentResult["thisCall"]["timetabledTime"]).seconds >= 180
     else:
       currentResult["thisCall"]["estimatedTime"] = currentResult["thisCall"]["timetabledTime"]
@@ -98,8 +99,7 @@ def getData():
 
     results.append(dict(currentResult))
 
-  print(results)
-  return results
+  return results, station
 
 
 def checkApiLimit():
@@ -158,7 +158,7 @@ def stationNameToSLOID(stationName):
   else:
     sloidData = json.loads(response.content)
     sloid = sloidData["results"][0]["sloid"]
-    print(sloid)
+    print(f"SLOID: {sloid}")
     return sloid
 
 
@@ -169,10 +169,10 @@ def loadConfig() -> tuple[Any, str]:
   """
 
   configFilePath = os.path.dirname(os.getcwd()) + "/Abfahrtsdisplay/config.yml"
-  with open(configFilePath, "r") as ymlFile:
+  with open(configFilePath, "r", encoding='utf-8') as ymlFile:
     configData = yaml.load(ymlFile.read(), yaml.FullLoader)["config"]
     with open(configData["keyfile"], "r") as keyfile:
-      apiKey = keyfile.read()
+      apiKey = keyfile.read().strip()
 
   return configData, apiKey
 
@@ -184,7 +184,6 @@ def saveConfig(config) -> None:
 def getBody(sloid, stationName):
   now = datetime.now(timezone.utc)
   timestamp = now.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
-  print(timestamp)
   body = f"""
     <OJP xmlns="http://www.vdv.de/ojp" xmlns:siri="http://www.siri.org.uk/siri" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xsi:schemaLocation="http://www.vdv.de/ojp" version="2.0">
     <OJPRequest>
@@ -221,6 +220,12 @@ def getBody(sloid, stationName):
   return body
 
 def getRqSince(listOfTimestamps: list, threshold: datetime) -> int:
+  r"""
+  returns the amount of requests that are sent since then.
+  :param listOfTimestamps: list of all request timestamps
+  :param threshold: threshold timestamp
+  :return: the number of requests
+  """
   listOfTimestamps.sort(reverse=True)
 
   posixThreshold = int(threshold.timestamp())
