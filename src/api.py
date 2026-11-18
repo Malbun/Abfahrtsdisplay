@@ -211,7 +211,7 @@ def getBody(sloid, stationName):
                     <DepArrTime>{timestamp}</DepArrTime>
                 </Location>
                 <Params>
-                    <NumberOfResults>10</NumberOfResults>
+                    <NumberOfResults>18</NumberOfResults>
                     <StopEventType>departure</StopEventType>
                     <IncludePreviousCalls>false</IncludePreviousCalls>
                     <IncludeOnwardCalls>true</IncludeOnwardCalls>
