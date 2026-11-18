@@ -116,7 +116,7 @@ if __name__ == "__main__":
   # Time Label
   drawWindow(window)
 
-  window.after(20000, lambda: drawWindow(window))
+  window.after(20000, lambda: redraw(window))
   window.after(50, lambda: updateTime(window))
 
   window.mainloop()
