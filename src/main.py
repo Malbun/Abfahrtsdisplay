@@ -59,12 +59,12 @@ def drawWindow(main):
       nCalls = 3
 
     if nCalls != 0:
-      onwardCallsFrame = ttk.Frame(resultFrame, width=270, height=30, relief="solid")
+      onwardCallsFrame = ttk.Frame(resultFrame, width=270, height=30)
       onwardCallsFrame.grid(row=1, column=2, sticky="w")
 
       for i in range(nCalls):
-        callLabel = ttk.Label(onwardCallsFrame, text=result["onwardCalls"]["calls"][i], font=("Arial", 12), padding=2)
-        callLabel.grid(row=0, column=i, sticky="w")
+        callLabel = ttk.Label(onwardCallsFrame, text=result["onwardCalls"]["calls"][i], font=("Arial", 12))
+        callLabel.grid(row=0, column=i, sticky="w", padx=3)
 
     rightFrame = ttk.Frame(resultFrame)
     rightFrame.grid(row=1, column=3, sticky="e")
