@@ -9,6 +9,8 @@ import xmltodict
 import pickle
 from pathlib import Path
 from zoneinfo import ZoneInfo
+import re
+
 
 
 def getData():
@@ -59,10 +61,13 @@ def getData():
       # get the planned quay
       currentResult["thisCall"]["plannedQuay"] = stopEvent["StopEvent"]["ThisCall"]["CallAtStop"]["PlannedQuay"]["Text"]["#text"]
 
+      # Check for slashes in the planned quay. Important for Zürich HB Museumsstrasse
+      slashInPlanned = not (re.search("/", currentResult["thisCall"]["plannedQuay"]) is None)
+
       # check if an estimated quay is present in data. Process the estimated quay and set the other quay flag
       if "EstimatedQuay" in stopEvent["StopEvent"]["ThisCall"]["CallAtStop"]:
         currentResult["thisCall"]["estimatedQuay"] = stopEvent["StopEvent"]["ThisCall"]["CallAtStop"]["EstimatedQuay"]["Text"]["#text"]
-        currentResult["thisCall"]["otherQuay"] = not currentResult["thisCall"]["estimatedQuay"] == currentResult["thisCall"]["plannedQuay"]
+        currentResult["thisCall"]["otherQuay"] = (not currentResult["thisCall"]["estimatedQuay"] == currentResult["thisCall"]["plannedQuay"]) and (not slashInPlanned)
       else:
         currentResult["thisCall"]["estimatedQuay"] = currentResult["thisCall"]["plannedQuay"]
         currentResult["thisCall"]["otherQuay"] = False
@@ -206,7 +211,7 @@ def getBody(sloid, stationName):
                     <DepArrTime>{timestamp}</DepArrTime>
                 </Location>
                 <Params>
-                    <NumberOfResults>10</NumberOfResults>
+                    <NumberOfResults>18</NumberOfResults>
                     <StopEventType>departure</StopEventType>
                     <IncludePreviousCalls>false</IncludePreviousCalls>
                     <IncludeOnwardCalls>true</IncludeOnwardCalls>
