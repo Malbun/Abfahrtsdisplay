@@ -120,5 +120,3 @@ if __name__ == "__main__":
   window.after(50, lambda: updateTime(window))
 
   window.mainloop()
-
-
