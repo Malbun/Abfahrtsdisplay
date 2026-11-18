@@ -169,7 +169,7 @@ def loadConfig() -> tuple[Any, str]:
   """
 
   configFilePath = os.path.dirname(os.getcwd()) + "/Abfahrtsdisplay/config.yml"
-  with open(configFilePath, "r") as ymlFile:
+  with open(configFilePath, "r", encoding='utf-8') as ymlFile:
     configData = yaml.load(ymlFile.read(), yaml.FullLoader)["config"]
     with open(configData["keyfile"], "r") as keyfile:
       apiKey = keyfile.read().strip()
@@ -206,7 +206,7 @@ def getBody(sloid, stationName):
                     <DepArrTime>{timestamp}</DepArrTime>
                 </Location>
                 <Params>
-                    <NumberOfResults>22</NumberOfResults>
+                    <NumberOfResults>10</NumberOfResults>
                     <StopEventType>departure</StopEventType>
                     <IncludePreviousCalls>false</IncludePreviousCalls>
                     <IncludeOnwardCalls>true</IncludeOnwardCalls>
@@ -220,6 +220,12 @@ def getBody(sloid, stationName):
   return body
 
 def getRqSince(listOfTimestamps: list, threshold: datetime) -> int:
+  r"""
+  returns the amount of requests that are sent since then.
+  :param listOfTimestamps: list of all request timestamps
+  :param threshold: threshold timestamp
+  :return: the number of requests
+  """
   listOfTimestamps.sort(reverse=True)
 
   posixThreshold = int(threshold.timestamp())
