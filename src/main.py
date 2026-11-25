@@ -83,6 +83,9 @@ def drawWindow(main):
     estimatedTimeLabel = ttk.Label(timeFrame, text=result["thisCall"]["estimatedTime"].strftime("%H:%M:%S"), font=("Arial", 12, "bold"), padding=2, width=8)
     estimatedTimeLabel.grid(row=1, column=0, sticky="e")
 
+    if result["thisCall"]["delayed"]:
+      estimatedTimeLabel.config(foreground="red")
+
   refreshButtonFrame = ttk.Frame(bodyFrame)
   refreshButtonFrame.pack()
 
